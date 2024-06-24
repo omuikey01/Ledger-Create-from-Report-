@@ -1,0 +1,348 @@
+
+;================================================== Add On Features =======================================
+
+[System: Variable]
+	selectSalesMan : ""
+	DesideReport : ""
+	selectVoucherOrLedgerLevel: ""
+	LineAdd2Var : ""
+	SalesmanorBroker : ""
+
+	
+[Variable: DesideReport ]
+	Type: String
+    Persist: Yes
+	
+[Variable: selectSalesMan ]
+	Type: String
+    Persist: Yes
+	
+[Variable: selectVoucherOrLedgerLevel ]
+	Type: String
+    Persist: Yes
+	
+[Variable:LineAdd2Var]
+	Type: String
+	Volatile:Yes
+	Persist: Yes
+
+[Variable: SalesmanorBroker ]
+	Type: String
+	Persist: Yes
+
+[#Part  : CMP TallyShopFeatures Left]
+
+	Add	: 	Line	: 	After	: CMP TallyNet Empty: OddOnFeture LineAdd1, +
+	OddOnFeture LineAdd2
+
+
+[Line:OddOnFeture LineAdd1]
+	Field: Long Prompt, logical Field
+	Local:Field:Long Prompt:Info:"Enable Sales Module"
+	Local:Field:Logical Field:Set as:Yes
+    
+[Line:OddOnFeture LineAdd2]
+	Field: Long Prompt, logical Field
+	Local:Field:Long Prompt:Info:"Set Alter Salesman Module Configuration"
+	Local:Field:Logical Field:Set as:##LineAdd2Var 
+	Local:Field:Logical Field:Storage:LineAdd2Var 
+	Local:Field:Logical Field:Modify:LineAdd2Var  : Yes
+    Local:Field:Logical Field:Sub Form:AOFSalesReport:$$value=Yes
+
+; AOF : - Add On Feature
+[Collection:AOFSalesMan]
+	Object :AOFObj1, AOFObj2, AOFObj3
+	Title:"Select Salesman"
+	Fetch:*.*
+	Format:$Name,30
+
+
+[Collection:AOFBrokerSalesMan]
+	Object : AOFObj5 ;, AOFObj5
+	Title:"Sales Person Name"
+	Fetch:*.*
+	Format:$Name,30
+
+[Collection:AOFLBlevel]
+	Object :AOFObj6, AOFObj7 ; , AOFObj8
+	Title:"Salesman At"
+	Fetch:*.*
+	Format:$Name,30
+
+[Collection:AOFCommision]
+	Object :AOFObj8, AOFObj9
+	Title:"Commision Level"
+	Fetch:*.*
+	Format:$Name,30
+
+
+[Object:AOFObj1]
+	Name:"Both"
+
+[Object:AOFObj2]
+	Name:"Purchase"
+
+[Object:AOFObj3]
+	Name:"Sales"
+
+[Object:AOFObj4]
+	Name:"Broker"
+
+[Object:AOFObj5]
+	Name:"Salesman"
+
+[Object:AOFObj6]
+	Name:"Ledger Level"
+
+[Object:AOFObj7]
+	Name:"Voucher Level"
+
+[Object:AOFObj8]
+	Name:"item Level"
+
+
+
+; Ledger Level  item Level
+
+
+
+
+[Report:AOFSalesReport]
+	Form:AOFSalesForm
+    Object: company
+		
+[Form:AOFSalesForm]
+	Width: 50
+	Part:AOFSalesHeadingPart, AOFSalesPart2
+
+[Part:AOFSalesHeadingPart]
+	Line:AOFHeadingLine
+
+[Line:AOFHeadingLine]
+	Space Bottom:0.1 inch
+	Field: AOFHeadingField
+
+
+[Field:AOFHeadingField]
+	Info:"Salesman Module Configuration"
+	Color: Black
+	Full Width:Yes
+	Style:normal Bold
+	Align:Center
+
+
+
+[Part: AOFSalesPart2]
+	Local:Line:Default:Space Top: 0.1 inch
+	Line:  AOF P2 Line1 , AOF P2 Line2, AOF P2 Line5, AOF P2 Line3, AOF P2 Line4  
+	
+
+[Line: AOF P2 Line1]
+	Field: Long Prompt, Commisionfor 
+	Local:Field:Long Prompt:Info:"Commision For "
+	
+[Field: Commisionfor]
+	Use: short name field
+	Table: AOFBrokerSalesMan
+	Storage: SalesmanorBroker
+	Modifies: SalesmanorBroker : Yes
+	Show Table: Always
+	Set Always:Yes
+	
+
+
+[Line: AOF P2 Line2]
+	Field: Long Prompt, logical field
+	Local:Field:Long Prompt:Info:"Create Salesman "
+	Local:Field: logical field:Set as: No
+	Local:Field: logical field: Sub Form: MasterSalesManCreate: $$Value=Yes
+	Local: Field: Default : Inactive: if #Commisionfor=$$LocaleString:"Salesman" Then No Else Yes
+	
+
+[Line: AOF P2 Line3]
+	Field: Long Prompt, CommisionAtfld; short name field
+	Local:Field:Long Prompt:Info:"Set Commision Selection At"
+
+[Field: CommisionAtfld]
+	Use: short name field
+	Table: AOFLBlevel
+	Show Table:Always
+	Set Always:Yes
+	Storage: selectVoucherOrLedgerLevel
+	Modifies: selectVoucherOrLedgerLevel: Yes
+	
+
+
+[Line: AOF P2 Line4]
+	Field: Long Prompt, short name field 
+	Local:Field: Long Prompt:Info:"Select Voucher "
+	Local:Field: short name field:Table: AOFSalesMan  ;, not applicable
+	Local:Field: short name field:Show Table:Always
+	Local:Field: short name field:Set Always:Yes
+	Local: Field: short name field: Storage: selectSalesMan
+	Local: Field: short name field: Modifies: selectSalesMan : Yes
+
+	Local: Field: Default : Inactive:  if #Commisionfor=$$LocaleString:"Salesman" Then No Else Yes
+	Local: Field: Default : Inactive: 	if #CommisionAtfld="Voucher Level" Then No Else Yes
+
+
+[Line: AOF P2 Line6]
+	Field: Long Prompt,short name field
+	Local:Field:Long Prompt:Info:"Salesman's Commision At"
+	Local:Field: short name field:Table: AOFCommision
+	Local:Field: short name field:Show Table:Always
+	Local:Field: short name field:Set Always:Yes
+	Local: Field: short name field: Storage: selectStockItem 
+	Local: Field: short name field: Modifies: selectStockItem : Yes
+	
+[Line: AOF P2 Line5]
+	Field: Long Prompt,logical Field
+	Local:Field:Long Prompt:Info:"Create Master "
+	Local:Field:Logical Field:Set as:No
+	Local: Field: Logical Field : Sub Form:BrokerName: $$Value=Yes
+	Local: Field: Default : Inactive: if #Commisionfor=$$LocaleString:"Broker" Then No Else Yes
+   
+[Function: MasterNameFun]
+	10  : Alter: Master Name
+	
+
+
+
+
+[System:UDF]
+
+	SName      :String:3001
+	SAdd1      :String:3002
+	SAdd2      :String:3003
+	SAdd3      :String:3004
+	SMobNo     :Number:3005
+	Sled  	   :String:3006
+
+
+[Variable:forLine2]
+	Type:String
+
+
+[Report:MasterSalesManCreate]
+	Object:Company
+	Form:MasterSalesManCreateForm
+
+
+[Form:MasterSalesManCreateForm]
+    Width: 50
+	Part:MasterSalesManCreatePart
+
+[Part:MasterSalesManCreatePart]
+	
+	Line:MasterSalesManLine_1,MasterSalesManLine_2,MasterSalesManLine_3, +
+	MasterSalesManLine_4,MasterSalesManLine_5,MasterSalesManLine_6
+    Local:Line:Default:Space Bottom:0.1 inch
+	
+[Line:MasterSalesManLine_1]
+	
+	Field: Long Prompt,Short Name Field
+	Local:Field:Long Prompt:Info:"Name"
+	Local:Field:Short Name Field:Set as:""
+    Local:Field:Short Name Field:Width:40
+	;Local:Field:Short Name Field:Set as:$Name
+	Local:Field:Short Name Field:Storage:SName
+	
+   
+[Line:MasterSalesManLine_2]
+	
+    Field: Long Prompt
+	Right Field: ADField
+	Local:Field:Long Prompt:Info:"Address"
+
+   [Field:ADField]
+	 Use:Name field
+	 Set as:""
+	 Width:40
+	 Delete: Storage
+	 Storage:SAdd1  
+		  
+
+[Line:MasterSalesManLine_3]
+	
+	Use:MasterSalesManLine_2
+	Local:Field:Long Prompt:Invisible:Yes 
+	Local:Field:ADField:Delete: Storage
+	Local:Field:ADField:Storage:SAdd2 
+	
+
+[Line:MasterSalesManLine_4]
+	
+     Use:MasterSalesManLine_2
+	 Local:Field:Long Prompt:Invisible:Yes 
+	 Local:Field:ADField:Delete: Storage
+	 Local:Field:ADField:Storage:SAdd3  
+
+
+[Line:MasterSalesManLine_5]
+	
+	Field: Long Prompt,short name Field
+	Local:Field:Long Prompt:Info:"Mobile No"
+    Local:Field:Short Name Field:Set as:""
+    Local:Field:Short Name Field:Width:30
+	Local:Field:Short Name Field:Type:Number
+	Local:Field:Short Name Field:Max:10
+	Local:Field:Short Name Field: Delete: Storage
+	Local:Field:Short Name Field:Storage:SMobNo
+	Local:Field:Short Name Field: Format: "NoComma"
+	
+	
+[Line:MasterSalesManLine_6]
+	
+	Field: Long Prompt,short name Field
+	Local:Field:Long Prompt:Info:"Post"
+	Local:Field:Short Name Field: Delete: Storage
+    Local:Field:Short Name Field:Width:30
+    Local:Field:Short Name Field:Table:ledger
+	Local:Field:Short Name Field:Show Table:Always
+    Local:Field:Short Name Field:Set Always:Yes
+	Local:Field:Short Name Field:Storage:Sled
+	Local:Field:Short Name Field: On: Accept : Yes: Call:  ledger creation
+	Local:Field:Short Name Field: On: Accept : Yes: Field Accept
+
+
+
+[Function: ledger creation]
+	
+	Variable: lname : String
+	Variable: ladd1 : String
+	Variable: ladd2 : String
+	Variable: ladd3 : String
+	Variable: lphone : String
+	Variable: lpost : String
+	
+	A1 : Set: lname : $SName
+	B1 : Set: ladd1 : $SAdd1
+	C1 : Set: ladd2 : $SAdd2
+	D1 : Set: ladd3 : $SAdd3
+	E1 : Set: lphone : $SMobNo
+	F1 : Set: lpost : $Sled
+
+
+	10: New Object: ledger
+
+	20: Set Value: name: ##lname
+	30: Set Value:parent: "Salesman"
+	40: Insert Collection Object:LEDMAILINGDETAILS
+	50: INSERT COLLECTION OBJECT : ADDRESS
+		51: SET VALUE : ADDRESS : ##ladd1
+		52: SET VALUE : ADDRESS : ##ladd2
+		53: SET VALUE : ADDRESS : ##ladd3
+		
+	60: SET TARGET : ..
+	
+	70: Set Value : APPLICABLEFROM: "20240401"
+	80: Set Value : MAILINGNAME :##lname
+	90: Set Value : COUNTRY : "India"
+	100: Set Value: STATE :"Madhya Pradesh"
+	110: Set Target:...
+
+	120 : Set Value : ledgermobile : ##lphone
+	130 : Set Value : salesmanpost : ##lpost
+	190: Set Target:..
+	200: Create Target
+	; 210 : Msg Box: "MSG" : "Ledger Create Done "
